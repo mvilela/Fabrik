@@ -12,8 +12,8 @@
 defined('_JEXEC') or die('Restricted access');
 
 use Joomla\Utilities\ArrayHelper;
-
-require_once COM_FABRIK_FRONTEND . '/helpers/image.php';
+use Fabrik\Helpers\Image;
+use Fabrik\Helpers\Uploader;
 
 define("FU_DOWNLOAD_SCRIPT_NONE", '0');
 define("FU_DOWNLOAD_SCRIPT_TABLE", '1');
@@ -994,11 +994,11 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 	 */
 	public function validate($data = array(), $repeatCounter = 0)
 	{
-		$input                = $this->app->input;
-		$params               = $this->getParams();
-		$this->_validationErr = '';
-		$errors               = array();
-		$ok                   = true;
+		$input                 = $this->app->input;
+		$params                = $this->getParams();
+		$this->validationError = '';
+		$errors                = array();
+		$ok                    = true;
 
 		if ($this->isAjax())
         {
@@ -1319,7 +1319,7 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 			$saveParams = array();
 			$files      = array_keys($crop);
 			$storage    = $this->getStorage();
-			$oImage     = FabimageHelper::loadLib($params->get('image_library'));
+			$oImage     = Image::loadLib($params->get('image_library'));
 			$oImage->setStorage($storage);
 			$fileCounter = 0;
 
@@ -1919,7 +1919,7 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 
 		$filePath = $this->_getFilePath($repeatGroupCounter);
 
-		if (!FabrikUploader::canUpload($file, $err, $params))
+		if (!Uploader::canUpload($file, $err, $params))
 		{
 			$this->setError($file['name'] . ': ' . FText::_($err));
 		}
@@ -1931,7 +1931,7 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 				case 0:
 					break;
 				case 1:
-					$filePath = FabrikUploader::incrementFileName($filePath, $filePath, 1);
+					$filePath = Uploader::incrementFileName($filePath, $filePath, 1);
 					break;
 				case 2:
 					JLog::add('Ind upload Delete file: ' . $filePath . '; user = ' . $this->user->get('id'), JLog::WARNING, 'com_fabrik.element.fileupload');
@@ -1953,7 +1953,7 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 
 		if (FabrikWorker::isImageExtension($filePath))
 		{
-			$oImage = FabimageHelper::loadLib($params->get('image_library'));
+			$oImage = Image::loadLib($params->get('image_library'));
 			$oImage->setStorage($storage);
 
 			if ($params->get('upload_use_wip', '0') == '1')
@@ -2193,7 +2193,7 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 
 		if ($element->hidden == '1')
 		{
-			return $this->getHiddenField($name, $data[$name], $id);
+			return $this->getHiddenField($name, $this->getValue($data, $repeatCounter), $id);
 		}
 
 		$str   = array();
@@ -2407,6 +2407,15 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 			$str[] = $allRenders;
 			$str   = $this->plupload($str, $repeatCounter, $values);
 		}
+
+		$nameRepeatSuffix = $groupModel->canRepeat() ? '[' . $repeatCounter . ']' : '';
+		$idRepeatSuffix   = $groupModel->canRepeat() ? '_' . $repeatCounter : '';
+
+		$str[] = $this->getHiddenField(
+			$this->getFullName(true, false) . '_orig' . $nameRepeatSuffix,
+			$this->getValue($data, $repeatCounter),
+			$this->getFullName(true, false) . '_orig' . $idRepeatSuffix
+		);
 
 		array_unshift($str, '<div class="fabrikSubElementContainer">');
 		$str[] = '</div>';
@@ -2682,7 +2691,7 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 
 		if (!$this->validate())
 		{
-			$o->error = $this->_validationErr;
+			$o->error = $this->validationError;
 			echo json_encode($o);
 
 			return;
@@ -3501,5 +3510,47 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
         return $this->getParams()->get('ajax_upload', '0') === '1';
     }
 
+	/**
+	 * Give elements a chance to reset data after a failed validation.  For instance, file upload element
+	 * needs to reset the values as they aren't submitted with the form
+	 *
+	 * @param  $data  array form data
+	 */
+	public function setValidationFailedData(&$data)
+	{
+		$groupModel = $this->getGroupModel();
+		$origName = $this->getFullName(true, false) . '_orig';
+		$thisName = $this->getFullName(true, false);
+
+		if (array_key_exists($origName, $data))
+		{
+			/*
+			if ($groupModel->canRepeat())
+			{
+				if (!is_array($data[$thisName]))
+				{
+					$data[$thisName] = array();
+				}
+
+				foreach ()
+				$data[$thisName][$repeatCounter] = $data[$origName][$repeatCounter];
+
+				if (!is_array($data[$thisName . '_raw']))
+				{
+					$data[$thisName . '_raw'] = array();
+				}
+
+				$data[$thisName . '_raw'][$repeatCounter] = $data[$origName][$repeatCounter];
+			}
+			else
+			{
+				$data[$name] = $data[$origName];
+				$data[$name . '_raw'] = $data[$origName];
+			}
+			*/
+			$data[$thisName] = $data[$origName];
+			$data[$thisName . '_raw'] = $data[$origName];
+		}
+	}
 
 }

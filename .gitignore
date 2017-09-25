@@ -32,6 +32,11 @@ libraries/joomla/document/*
 !libraries/joomla/document/partial/*
 !libraries/joomla/document/pdf/
 !libraries/joomla/document/pdf/*
+!libraries/src
+libraries/src/*
+!libraries/src/Document
+libraries/src/Document/*
+!libraries/src/Document/PdfDocument.php
 libraries/dompdf/lib/fonts/log.htm
 logs
 modules/*
@@ -47,11 +52,13 @@ media/*
 media/com_fabrik/uploads/
 node_modules/*
 plugins/*
+!plugins/system/
+plugins/system/*
+!plugins/system/fabrik
+!plugins/search/
 plugins/search/*
 !plugins/search/fabrik
-plugins/system/*
 plugins/fabrik_list/download/libs
-!plugins/system/fabrik/
 !plugins/fabrik_element/
 !plugins/fabrik_form/
 plugins/fabrik_form/php/scripts/
