@@ -1,5 +1,6 @@
 .buildpath
 .project
+.idea
 .settings/
 .tx/
 *.txt
@@ -37,6 +38,13 @@ libraries/src/*
 !libraries/src/Document
 libraries/src/Document/*
 !libraries/src/Document/PdfDocument.php
+!libraries/src/Document/PartialDocument.php
+!libraries/src/Document/Renderer
+libraries/src/Document/Renderer/*
+!libraries/src/Document/Renderer/Pdf/
+!libraries/src/Document/Renderer/Pdf/*
+!libraries/src/Document/Renderer/Partial/
+!libraries/src/Document/Renderer/Partial/*
 libraries/dompdf/lib/fonts/log.htm
 logs
 modules/*

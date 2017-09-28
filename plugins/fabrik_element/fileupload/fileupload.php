@@ -1461,11 +1461,14 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 			return false;
 		}
 
+		/*
 		if ($input->getInt('fabrik_ajax') == 1)
 		{
 			// Inline edit for example no $_FILE data sent
 			return false;
 		}
+		*/
+
 		/* If we've turned on crop but not set ajax upload then the cropping wont work so we shouldn't return
 		 * otherwise no standard image processed
 		 */
@@ -2315,8 +2318,16 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 					$v = $v->file;
 				}
 
-				$render = $this->loadElement($v);
-				$render->render($this, $params, $v);
+                // use download script to show file rather than direct link to it
+                if ($params->get('fu_force_download_script', '0') !== '0' )
+                {
+                        $render->output = $this->downloadLink($v, $data, $repeatCounter, '');
+                }
+                else
+                {
+                    $render = $this->loadElement($v);
+                    $render->render($this, $params, $v);
+                }
 
 				if ($render->output != '')
 				{
@@ -2408,14 +2419,24 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 			$str   = $this->plupload($str, $repeatCounter, $values);
 		}
 
-		$nameRepeatSuffix = $groupModel->canRepeat() ? '[' . $repeatCounter . ']' : '';
-		$idRepeatSuffix   = $groupModel->canRepeat() ? '_' . $repeatCounter : '';
+		if (!$this->isAjax()) {
+		    /*
+		     * Store any existing value for non-AJAX in a hidden element, to use after a failed validation,
+		     * otherwise we lose that value, as the data is coming from submitted data, which won't contain
+		     * original file.
+		     */
+            $nameRepeatSuffix = $groupModel->canRepeat() ? '[' . $repeatCounter . ']' : '';
+            $idRepeatSuffix = $groupModel->canRepeat() ? '_' . $repeatCounter : '';
 
-		$str[] = $this->getHiddenField(
-			$this->getFullName(true, false) . '_orig' . $nameRepeatSuffix,
-			$this->getValue($data, $repeatCounter),
-			$this->getFullName(true, false) . '_orig' . $idRepeatSuffix
-		);
+            $value = $this->getValue($data, $repeatCounter);
+            $value = is_array($value) ? json_encode($value) : $value;
+
+            $str[] = $this->getHiddenField(
+                $this->getFullName(true, false) . '_orig' . $nameRepeatSuffix,
+                $value,
+                $this->getFullName(true, false) . '_orig' . $idRepeatSuffix
+            );
+        }
 
 		array_unshift($str, '<div class="fabrikSubElementContainer">');
 		$str[] = '</div>';
@@ -2706,8 +2727,6 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 			return;
 		}
 
-		require_once COM_FABRIK_FRONTEND . '/helpers/uploader.php';
-
 		// @TODO test in join
 		if (array_key_exists('file', $_FILES) || array_key_exists('join', $_FILES))
 		{
@@ -2909,7 +2928,6 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 		}
 
 		$db = $this->getListModel()->getDb();
-		require_once COM_FABRIK_FRONTEND . '/helpers/uploader.php';
 		$params = $this->getParams();
 
 		if ($params->get('upload_delete_image', false))
@@ -3518,39 +3536,15 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 	 */
 	public function setValidationFailedData(&$data)
 	{
-		$groupModel = $this->getGroupModel();
-		$origName = $this->getFullName(true, false) . '_orig';
-		$thisName = $this->getFullName(true, false);
+        if (!$this->isAjax()) {
+            $origName = $this->getFullName(true, false) . '_orig';
+            $thisName = $this->getFullName(true, false);
 
-		if (array_key_exists($origName, $data))
-		{
-			/*
-			if ($groupModel->canRepeat())
-			{
-				if (!is_array($data[$thisName]))
-				{
-					$data[$thisName] = array();
-				}
-
-				foreach ()
-				$data[$thisName][$repeatCounter] = $data[$origName][$repeatCounter];
-
-				if (!is_array($data[$thisName . '_raw']))
-				{
-					$data[$thisName . '_raw'] = array();
-				}
-
-				$data[$thisName . '_raw'][$repeatCounter] = $data[$origName][$repeatCounter];
-			}
-			else
-			{
-				$data[$name] = $data[$origName];
-				$data[$name . '_raw'] = $data[$origName];
-			}
-			*/
-			$data[$thisName] = $data[$origName];
-			$data[$thisName . '_raw'] = $data[$origName];
-		}
+            if (array_key_exists($origName, $data)) {
+                $data[$thisName] = $data[$origName];
+                $data[$thisName . '_raw'] = $data[$origName];
+            }
+        }
 	}
 
 }
