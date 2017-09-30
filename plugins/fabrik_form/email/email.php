@@ -13,7 +13,6 @@ use Fabrik\Helpers\Pdf;
 
 // Require the abstract plugin class
 require_once COM_FABRIK_FRONTEND . '/models/plugin-form.php';
-//require_once COM_FABRIK_FRONTEND . '/helpers/pdf.php';
 
 /**
  * Send email upon form submission
