@@ -102,6 +102,7 @@ class PlgFabrik_ElementRating extends PlgFabrik_Element
 
 		for ($i = 0; $i < count($data); $i++)
 		{
+			/*
 			$avg   = $this->_renderListData($data[$i], $thisRow);
 			$atpl  = '';
 			$a2    = '';
@@ -136,6 +137,16 @@ class PlgFabrik_ElementRating extends PlgFabrik_Element
 
 			$str[]    = '</div>';
 			$data[$i] = implode("\n", $str);
+			*/
+			$layout                      = $this->getLayout('list');
+			$layoutData                  = new stdClass;
+			//$layoutData->clearImg        = FabrikHelperHTML::image('remove.png', 'list', @$this->tmpl, $imgOpts);
+			$layoutData->avg             = $this->_renderListData($data[$i], $thisRow);;
+			$layoutData->canRate         = $canRate;
+			$layoutData->ratingNoneFirst = $params->get('rating-nonefirst');
+			$layoutData->css             = $canRate ? 'cursor:pointer;' : '';;
+			$layoutData->tmpl            = @$this->tmpl;
+			$data[$i]                    = $layout->render($layoutData);
 		}
 
 		$data = json_encode($data);
@@ -614,13 +625,24 @@ class PlgFabrik_ElementRating extends PlgFabrik_Element
 		$opts->elid       = $this->getElement()->id;
 		$opts->userid     = (int) $this->user->get('id');
 		$opts->formid     = $formId;
-		$opts->canRate    = (bool) $this->canRate();
+
+		if ($opts->editable && $params->get('rating-rate-in-form', '1') === '0')
+		{
+			$opts->canRate = false;
+		}
+		else
+		{
+			$opts->canRate = (bool) $this->canRate();
+		}
+
 		$opts->mode       = $params->get('rating-mode');
 		$opts->doAjax     = $params->get('rating-mode') != 'creator-rating';
 		$opts->view       = $input->get('view');
 		$opts->rating     = $value;
 		$opts->listid     = $listId;
 		$opts->defaultVal = '0';
+		$opts->starIcon   = FabrikHelperHTML::icon("icon-star",  '', '', true);
+		$opts->starIconEmpty = FabrikHelperHTML::icon("icon-star-empty", '', '', true);
 
 		JText::script('PLG_ELEMENT_RATING_NO_RATING');
 
@@ -635,29 +657,24 @@ class PlgFabrik_ElementRating extends PlgFabrik_Element
 	 */
 	public function elementListJavascript()
 	{
-		$params          = $this->getParams();
-		$id              = $this->getHTMLId();
-		$listModel       = $this->getlistModel();
-		$list            = $listModel->getTable();
-		$opts            = new stdClass;
-		$opts->listid    = $list->id;
-		$imagePath       = JUri::root() . '/plugins/fabrik_element/rating/images/';
-		$opts->imagepath = $imagePath;
-		$opts->elid      = $this->getElement()->id;
+		$params              = $this->getParams();
+		$id                  = $this->getHTMLId();
+		$listModel           = $this->getlistModel();
+		$list                = $listModel->getTable();
+		$opts                = new stdClass;
+		$opts->listid        = $list->id;
+		$opts->imagepath     = JUri::root() . '/plugins/fabrik_element/rating/images/';
+		$opts->elid          = $this->getElement()->id;
+		$opts->canRate       = $params->get('rating-mode') == 'creator-rating' ? true : $this->canRate();
+		$opts->doAjax        = $params->get('rating-mode') != 'creator-rating';
+		$opts->ajaxloader    = FabrikHelperHTML::image("ajax-loader.gif", 'list', @$this->tmpl, array(), true);
+		$opts->listRef       = $listModel->getRenderContext();
+		$opts->formid        = $listModel->getFormModel()->getId();
+		$opts->userid        = (int) $this->user->get('id');
+		$opts->mode          = $params->get('rating-mode');
+		$opts->starIcon      = FabrikHelperHTML::icon("icon-star", '', '', true);
+		$opts->starIconEmpty = FabrikHelperHTML::icon("icon-star-empty", '', '', true);
 
-		if (!FabrikWorker::j3())
-		{
-			$opts->insrc  = FabrikHelperHTML::image("star.png", 'list', @$this->tmpl, array(), true);
-			$opts->outsrc = FabrikHelperHTML::image("star-empty.png", 'list', @$this->tmpl, array(), true);
-		}
-
-		$opts->canRate    = $params->get('rating-mode') == 'creator-rating' ? true : $this->canRate();
-		$opts->doAjax     = $params->get('rating-mode') != 'creator-rating';
-		$opts->ajaxloader = FabrikHelperHTML::image("ajax-loader.gif", 'list', @$this->tmpl, array(), true);
-		$opts->listRef    = $listModel->getRenderContext();
-		$opts->formid     = $listModel->getFormModel()->getId();
-		$opts->userid     = (int) $this->user->get('id');
-		$opts->mode       = $params->get('rating-mode');
 		$opts             = json_encode($opts);
 
 		return "new FbRatingList('$id', $opts);\n";

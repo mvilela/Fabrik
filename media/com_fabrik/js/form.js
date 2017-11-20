@@ -1362,6 +1362,18 @@ define(['jquery', 'fab/encoder', 'fab/fabrik', 'lib/debounce/jquery.ba-throttle-
                         'type' : 'hidden'
                     }));
                 }
+                hiddenElements = [];
+                // insert hidden element of hidden elements (!) used by validation code for "skip if hidden" option
+                jQuery.each(this.formElements, function (id, el) {
+                   if (el.element && jQuery(el.element).closest('.fabrikHide').length !== 0) {
+                       hiddenElements.push(id);
+                   }
+                });
+                this.form.adopt(new Element('input', {
+                    'name' : 'hiddenElements',
+                    'value': JSON.stringify(hiddenElements),
+                    'type' : 'hidden'
+                }));
                 if (this.options.ajax) {
                     // Do ajax val only if onSubmit val ok
                     if (this.form) {
@@ -1382,7 +1394,8 @@ define(['jquery', 'fab/encoder', 'fab/fabrik', 'lib/debounce/jquery.ba-throttle-
                         data.format = 'raw';
 
                         // if HTML 5, use FormData so we can do uploads from popups via AJAX
-                        if (window.FormData) {
+                        // poop, doesn't work in Edge or Safari, punt till they implement FormData correctly
+                        if (false && window.FormData) {
                             fd = new FormData(this.form);
 
                             jQuery.each(data, function(k, v) {

@@ -154,6 +154,7 @@ define(['jquery', 'fab/elementlist'], function (jQuery, FbElementList) {
         },
 
         update: function (val) {
+            this.setValue(val);
             if (!this.options.editable) {
                 if (val === '') {
                     this.element.innerHTML = '';
@@ -162,19 +163,21 @@ define(['jquery', 'fab/elementlist'], function (jQuery, FbElementList) {
                 this.element.innerHTML = $H(this.options.data).get(val);
                 return;
             } else {
-                var els = this._getSubElements();
-                if (typeOf(val) === 'array') {
-                    els.each(function (el) {
-                        if (val.contains(el.value)) {
-                            this.setButtonGroupCSS(el);
-                        }
-                    }.bind(this));
-                } else {
-                    els.each(function (el) {
-                        if (el.value === val) {
-                            this.setButtonGroupCSS(el);
-                        }
-                    }.bind(this));
+                if (this.options.btnGroup) {
+                    var els = this._getSubElements();
+                    if (typeOf(val) === 'array') {
+                        els.each(function (el) {
+                            if (val.contains(el.value)) {
+                                this.setButtonGroupCSS(el);
+                            }
+                        }.bind(this));
+                    } else {
+                        els.each(function (el) {
+                            if (el.value === val) {
+                                this.setButtonGroupCSS(el);
+                            }
+                        }.bind(this));
+                    }
                 }
             }
         },
@@ -190,6 +193,17 @@ define(['jquery', 'fab/elementlist'], function (jQuery, FbElementList) {
 
         getChangeEvent: function () {
             return this.options.changeEvent;
+        },
+
+        /**
+         * Get the dom selector that events should be attached to, need to include label for button groups
+         * @returns {string}
+         */
+        eventDelegate: function () {
+            var str = 'input[type=' + this.type + '][name^=' + this.options.fullName + ']';
+            str += ', [class*=fb_el_' + this.options.fullName + '] .fabrikElement label';
+
+            return str;
         }
 
     });

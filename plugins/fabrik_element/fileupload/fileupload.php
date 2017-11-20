@@ -1462,12 +1462,14 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 		}
 
 		/*
+		 * remove this if Safari and Edge ever get their FormData act together
+		 */
 		if ($input->getInt('fabrik_ajax') == 1)
 		{
 			// Inline edit for example no $_FILE data sent
 			return false;
 		}
-		*/
+
 
 		/* If we've turned on crop but not set ajax upload then the cropping wont work so we shouldn't return
 		 * otherwise no standard image processed
@@ -1731,9 +1733,9 @@ class PlgFabrik_ElementFileupload extends PlgFabrik_Element
 		}
 
 		$storage = $this->getStorage();
-		$file    = $storage->clean(JPATH_SITE . '/' . $filename);
-		$thumb   = $storage->clean(JPATH_SITE . '/' . $storage->_getThumb($filename));
-		$cropped = $storage->clean(JPATH_SITE . '/' . $storage->_getCropped($filename));
+		$file    = $storage->clean($filename);
+		$thumb   = $storage->clean($storage->_getThumb($filename));
+		$cropped = $storage->clean($storage->_getCropped($filename));
 
 		$logMsg = 'Delete files: ' . $file . ' , ' . $thumb . ', ' . $cropped . '; user = ' . $this->user->get('id');
 		JLog::add($logMsg, JLog::WARNING, 'com_fabrik.element.fileupload');
